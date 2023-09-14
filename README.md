@@ -1,4 +1,4 @@
-# rest_api_msl
+# Rest Api Integration and Otp Generation
 
 A new Flutter project.
 
