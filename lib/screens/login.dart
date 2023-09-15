@@ -1,8 +1,11 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, use_build_context_synchronously
+
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:rest_api_msl/screens/otp_verify.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,21 +17,63 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phonecontroller = TextEditingController();
+  var phoneController ;
+  
+  Future generateOtp() async {
+   phoneController = "+91${_phonecontroller.text}";
 
-  Future<void> generateOtp() async {
-    final apiUrl = 'http://202.88.234.86:3331/user-entry';
-    final response = await http.get(Uri.parse(apiUrl));
+    print(_phonecontroller.text);
+    print(phoneController);
+    final PermissionStatus status = await Permission.sms.request();
+    if (status.isGranted) {
+      var url = Uri.parse(
+        'http://202.88.234.86:3331/user-entry',
+      );
+      var headers = {
+        'Content-Type': 'application/json',
+      };
+      var body = jsonEncode({
+        'phone': phoneController,
+      });
+      var response = await http.post(
+        url,
+        body: body,
+        headers: headers,
+      );
+      print(response.statusCode);
+      print(response.body);
+      if (response.statusCode == 200) {
+        final otp = json.decode(response.body);
+        print(otp);
+        print('inside status0');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('OTP Generation Successful!'),
+            duration: Duration(seconds: 2), // Adjust the duration as needed
+          ),
+        );
 
-    if (response.statusCode == 200) {
-      final otp = response.body;
-      print('Otp generated : $otp');
-    } else {
-      print('Failed to generate otp ${response.statusCode}');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OtpScreen(
+              phoneNumber: phoneController,
+            ),
+          ),
+        );
+      } else {
+        print('inside else part');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to Generate otp'),
+          ),
+        );
+      }
     }
   }
 
-  GlobalKey<FormState> _formKey = GlobalKey();
-  
+  final GlobalKey<FormState> _formKey = GlobalKey();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,6 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: IntlPhoneField(
+                  // countries: [],
                   invalidNumberMessage: 'Not a valid number',
                   initialCountryCode: 'IN',
                   dropdownIconPosition: IconPosition.trailing,
@@ -62,7 +108,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   showCountryFlag: true,
                   keyboardType: TextInputType.phone,
                   controller: _phonecontroller,
-                  onChanged: (phone) => print(phone.completeNumber),
+                  // validator: (value) {
+                  //   if (value!.isValidNumber()) {
+                  //     return "Enter a Valid Number";
+                  //   }
+                  //   return null;
+                  // },
+                  // onChanged: (phone) => print(phone.completeNumber),
                   decoration: InputDecoration(
                     focusedBorder: OutlineInputBorder(
                       borderSide: BorderSide(
@@ -82,17 +134,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 49,
               ),
               ElevatedButton(
-                // onPressed: generateOtp
+                onPressed: generateOtp,
 
-                onPressed: () {
-                  _formKey.currentState?.validate();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const OtpScreen(),
-                    ),
-                  );
-                },
+                // onPressed: () {
+                //   _formKey.currentState?.validate();
+                // },
 
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).primaryColor,
