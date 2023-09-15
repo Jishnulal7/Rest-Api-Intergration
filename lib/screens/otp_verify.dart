@@ -62,6 +62,7 @@ class _OtpScreenState extends State<OtpScreen> {
     }
   }
 
+
   final GlobalKey<FormState> _formKey = GlobalKey();
 
   @override
@@ -301,8 +302,8 @@ class _OtpScreenState extends State<OtpScreen> {
           Countdown(
             seconds: 10,
             controller: _controller,
-            build: (_, double time) => Text(
-              time.toString(),
+            build: (_, double time) => const Text(
+              '2.59',
             ),
             interval: const Duration(minutes: 2),
           ),
